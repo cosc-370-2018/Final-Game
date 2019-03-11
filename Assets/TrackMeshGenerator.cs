@@ -18,8 +18,8 @@ public class TrackMeshGenerator : MonoBehaviour
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
-        GenerateStraightSection();
-        //GenerateCurvedSection();
+        //GenerateStraightSection();
+        GenerateCurvedSection();
         CreateMesh();
     }
 
@@ -70,10 +70,10 @@ public class TrackMeshGenerator : MonoBehaviour
             {
                 vertices[i] = new Vector3(x + xoffset, 0, z + zoffset);
                 i++;
-                xoffset += 0.01f;
+                xoffset += 0.01f * z;
                 if (z > 0)
                 {
-                    zoffset -= 0.08f;
+                    zoffset -= 0.08f * -x;
                 }
                 
             }
