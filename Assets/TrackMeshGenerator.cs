@@ -13,13 +13,23 @@ public class TrackMeshGenerator : MonoBehaviour
     public int xSize = 6;
     public int zSize = 10;
 
+    public bool straight = true;
+
     void Start()
     {
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
-        //GenerateStraightSection();
-        GenerateCurvedSection();
+        if (straight)
+        {
+            GenerateStraightSection();
+        } else
+        {
+            GenerateCurvedConnector();
+        }
+
+        //GenerateCurvedSection();
+        
         CreateMesh();
     }
 
@@ -99,6 +109,36 @@ public class TrackMeshGenerator : MonoBehaviour
             }
             vert++;
         }
+    }
+
+    void GenerateCurvedConnector() {
+        vertices = new Vector3[]
+        {
+            new Vector3(0, 0, 0),
+            new Vector3(0 + xSize, 0, 0),
+            new Vector3(0, 0, 1),
+            new Vector3(0 + xSize, 0, 1),
+
+            new Vector3(0 + xSize + 1, 0, 2),
+            new Vector3(0 + xSize + 1, 0, 2 + xSize),
+            new Vector3(0 + xSize + 2, 0, 2),
+            new Vector3(0 + xSize + 2, 0, 2 + xSize),
+
+            new Vector3(1.5f, 0, 4.5f),
+            new Vector3(3.5f, 0, 6.5f)
+
+        };
+
+        triangles = new int[] {
+            0, 2, 1,
+            1, 2, 3,
+            4, 5, 6,
+            6, 5, 7,
+            3, 2, 4,
+            2, 8, 4,
+            4, 8, 9,
+            9, 5, 4
+        };
     }
 
     void CreateMesh()
