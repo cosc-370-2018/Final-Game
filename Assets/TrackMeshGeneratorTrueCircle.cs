@@ -32,6 +32,41 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         }
     }
 
+    public class TrackPart
+    {
+        public string type;
+        public float distance;
+        public float angle;
+        public float radius;
+        public bool rightturn;
+
+        public TrackPart()
+        {
+            type = "straight";
+            distance = 1f;
+        }
+
+        public TrackPart(string inType, float inDist)
+        {
+            type = "straight";
+            distance = inDist;
+        }
+
+        public TrackPart(string inType, float inAngle, float inRadius, bool inRightTurn)
+        {
+            type = "curve";
+            angle = inAngle;
+            radius = inRadius;
+            rightturn = inRightTurn;
+        }
+    }
+
+    Vector3 Rotate_Vector3(Vector3 vector, float deg_angle)
+    {
+        float angle = Mathf.Deg2Rad * deg_angle;
+        return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), 0, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
+    }
+
     void Start()
     {
         mesh = new Mesh();
@@ -43,34 +78,80 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         OffsetData offset_data = new OffsetData(Vector3.zero, 0f, 0, 0);
 
         // dynamic track attributes
-        int NumOfStraights = 1;
-        int NumOfCurves = 2;
+        int NumOfStraights = 0;
+        int NumOfCurves = 0;
+
+        List<TrackPart> track = new List<TrackPart>();
+
+        ////////////////////////////////////////////////////////////////////
+        // construct track here
+        // straight section --> TrackPart("straight", length (float));
+        // curve section --> TrackPart("curve", degree of turn (in degrees, as a float), turn radius (float), right turn? (true or false));
+        track.Add(new TrackPart("straight", 5f));
+        track.Add(new TrackPart("curve", 45f, 3f, true));
+        track.Add(new TrackPart("curve", 90f, 3f, false));
+        track.Add(new TrackPart("straight", 5f));
+        track.Add(new TrackPart("curve", 45f, 3f, true));
+        track.Add(new TrackPart("curve", 32f, 3f, true));
+        track.Add(new TrackPart("curve", 118f, 3f, false));
+        track.Add(new TrackPart("straight", 5f));
+
+        ////////////////////////////////////////////////////////////////////
+
+        // count # of each type of track part
+        TrackPart[] finalTrack = track.ToArray();
+        for (int i = 0; i < finalTrack.Length; i++)
+        {
+            if (finalTrack[i].type == "curve")
+            {
+                NumOfCurves++;
+            } else {
+                NumOfStraights++;
+            }
+        }
 
         // calculate variables and create arrays of appropriate lengths
-        // do not change these
+        // do not mess with these
         int totalVertices = (NumOfStraights*4)+(NumOfCurves*(2+(2*NumOfCurveSegments)));
         int totalTriangles = 3*((NumOfStraights*2)+(NumOfCurves*(2*NumOfCurveSegments)));
         vertices = new Vector3[totalVertices];
         triangles = new int[totalTriangles];
 
+        // iterate through track[] and create all the segments
+        for (int i = 0; i < finalTrack.Length; i++)
+        {
+            if (finalTrack[i].type == "curve")
+            {
+                offset_data = GenerateCurvedSection(finalTrack[i].angle, finalTrack[i].radius, track_width, NumOfCurveSegments, finalTrack[i].rightturn, offset_data);
+            } else {
+                offset_data = GenerateStraightSection(finalTrack[i].distance, track_width, offset_data);
+            }
+        }
 
-        Debug.Log("TriLen:" + triangles.Length);
-        Debug.Log("VrtLen:" + vertices.Length);
+        //Debug.Log("TriLen:" + triangles.Length);
+        //Debug.Log("VrtLen:" + vertices.Length);
 
-        offset_data = GenerateStraightSection(10f, track_width, offset_data);
-        offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
-        offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, true, offset_data);
+
+        //offset_data = GenerateStraightSection(10f, track_width, offset_data);
+        //Debug.Log("end: " + offset_data.position_offset);
+        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
+        //Debug.Log("end: " + offset_data.position_offset);
+        //offset_data = GenerateStraightSection(5f, track_width, offset_data);
+        //Debug.Log("end: " + offset_data.position_offset);
+        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
+        //offset_data = GenerateStraightSection(5f, track_width, offset_data);
+        //Debug.Log("end: " + offset_data.position_offset);
         //(2, 0, 10)
         //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
 
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            Debug.Log("vrts @ " + i + ":" + vertices[i]);
+            //Debug.Log("vrts @ " + i + ":" + vertices[i]);
         }
         for (int i = 0; i < triangles.Length; i++)
         {
-            Debug.Log("tris @ " + i + ":" + triangles[i]);
+            //Debug.Log("tris @ " + i + ":" + triangles[i]);
         }
 
         CreateMesh();
@@ -78,10 +159,10 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 
     OffsetData GenerateStraightSection(float track_length, float track_width, OffsetData offset)
     {
-        vertices[offset.vertices_index+0] = new Vector3(0.5f*track_width, 0, 0) + offset.position_offset;
-        vertices[offset.vertices_index+1] = new Vector3(-0.5f*track_width, 0, 0) + offset.position_offset;
-        vertices[offset.vertices_index+2] = new Vector3(0.5f*track_width, 0, track_length) + offset.position_offset;
-        vertices[offset.vertices_index+3] = new Vector3(-0.5f*track_width, 0, track_length) + offset.position_offset;
+        vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        vertices[offset.vertices_index+2] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
+        vertices[offset.vertices_index+3] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
 
         triangles[offset.triangles_index+0] = offset.vertices_index + 0;
         triangles[offset.triangles_index+1] = offset.vertices_index + 1;
@@ -101,7 +182,8 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // should use this formula to make a "Vector3Rotate(vector, angle)" function
         // Vector3((Mathf.Cos(offset.rotation_offset)*0)-(Mathf.Sin(offset.rotation_offset)*track_length), 0, (Mathf.Sin(offset.rotation_offset)*0)+(Mathf.Cos(offset.rotation_offset)*track_length))
         
-        OffsetData new_offset = new OffsetData(new Vector3(0, 0, track_length) + offset.position_offset, offset.rotation_offset, offset.vertices_index + 4, offset.triangles_index + 6);
+        //Debug.Log("RotOff: " + offset.rotation_offset);
+        OffsetData new_offset = new OffsetData(Rotate_Vector3(new Vector3(0, 0, track_length), offset.rotation_offset) + offset.position_offset, offset.rotation_offset, offset.vertices_index + 4, offset.triangles_index + 6);
         return new_offset;
     }
 
@@ -130,10 +212,10 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // set rotational offset
         if (right_turn == true) {
             angle = Mathf.PI + (offset.rotation_offset*Mathf.Deg2Rad);
-            internal_offset = new Vector3(radius, 0, 0);
+            internal_offset = Rotate_Vector3(new Vector3(radius, 0, 0), offset.rotation_offset);
         } else {
             angle = 0f + (offset.rotation_offset*Mathf.Deg2Rad);
-            internal_offset = new Vector3(-radius, 0, 0);
+            internal_offset = Rotate_Vector3(new Vector3(-radius, 0, 0), offset.rotation_offset);
         }
 
         // offset starting angle so the initial time through the loop will be working on the initial points (at 0)
@@ -171,7 +253,7 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             //Debug.Log("outer_p:" + outer_point);
 
             // we set these every loop but don't do anything with them until after the loop is done, because all we're trying to get is points from the last set of calculations.
-            end_position = new Vector3((Mathf.Cos(angle)*radius), 0, (Mathf.Sin(angle)*radius)) + offset.position_offset;
+            end_position = new Vector3((Mathf.Cos(angle)*radius), 0, (Mathf.Sin(angle)*radius)) + internal_offset + offset.position_offset;
         }
 
         if (right_turn == true)
@@ -214,7 +296,11 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             triangles[i+offset.triangles_index] = triangles_int[i]+offset.vertices_index;
         }
 
-        end_direction = (angle*Mathf.Rad2Deg)-offset.rotation_offset;
+        if (right_turn == true) {
+            end_direction = offset.rotation_offset-curve_angle;
+        } else {
+            end_direction = offset.rotation_offset+curve_angle;
+        }
         new_offset = new OffsetData(end_position, end_direction, offset.vertices_index+vertices_int.Length, offset.triangles_index+triangles_int.Length);
 
         return new_offset;
