@@ -95,6 +95,11 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         track.Add(new TrackPart("curve", 32f, 3f, true));
         track.Add(new TrackPart("curve", 118f, 3f, false));
         track.Add(new TrackPart("straight", 5f));
+        track.Add(new TrackPart("curve", 190f, 5f, false));
+        track.Add(new TrackPart("straight", 20f));
+        track.Add(new TrackPart("curve", 264f, 3f, false));
+        track.Add(new TrackPart("straight", 18.5f));
+        track.Add(new TrackPart("curve", 180f, 3.182f, true));
 
         ////////////////////////////////////////////////////////////////////
 
@@ -130,19 +135,6 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 
         //Debug.Log("TriLen:" + triangles.Length);
         //Debug.Log("VrtLen:" + vertices.Length);
-
-
-        //offset_data = GenerateStraightSection(10f, track_width, offset_data);
-        //Debug.Log("end: " + offset_data.position_offset);
-        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
-        //Debug.Log("end: " + offset_data.position_offset);
-        //offset_data = GenerateStraightSection(5f, track_width, offset_data);
-        //Debug.Log("end: " + offset_data.position_offset);
-        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
-        //offset_data = GenerateStraightSection(5f, track_width, offset_data);
-        //Debug.Log("end: " + offset_data.position_offset);
-        //(2, 0, 10)
-        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
 
 
         for (int i = 0; i < vertices.Length; i++)
