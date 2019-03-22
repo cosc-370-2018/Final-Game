@@ -7,14 +7,8 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 {
     Mesh mesh;
 
-    int NumOfStraights = 0;
-    int NumOfCurves = 1;
-    int NumOfCurveSegments = 20;
-
     Vector3[] vertices;
     int[] triangles;
-
-    OffsetData offset_data;
 
     public class OffsetData
     {
@@ -36,7 +30,6 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             vertices_index = vertex;
             triangles_index = triangle;
         }
-
     }
 
     void Start()
@@ -44,46 +37,71 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         mesh = new Mesh();
         GetComponent<MeshFilter>().mesh = mesh;
 
-        int VerticesInCurves = NumOfCurves * (NumOfCurveSegments * 2);
-        //vertices = new Vector3[2 + (2*NumOfStraights) + VerticesInCurves];
-        //triangles = new int[3*((NumOfStraights*2) + (NumOfCurveSegments*2))];
+        // define track attributes here
         float track_width = 1f;
-        vertices = new Vector3[44];
-        triangles = new int[3*2*20];
+        int NumOfCurveSegments = 20;
+        OffsetData offset_data = new OffsetData(Vector3.zero, 0f, 0, 0);
 
-        // create first 2 starting points
-        vertices[0] = new Vector3(10, 0, 0);
-        vertices[1] = new Vector3(10, 0, 0);
-        Debug.Log(vertices[0] + " " + vertices[1]);
+        // dynamic track attributes
+        int NumOfStraights = 1;
+        int NumOfCurves = 2;
 
-        offset_data = new OffsetData(Vector3.zero, 0f, 2, 0);
-        //offset_data = GenerateStraightSection(10f, track_width, offset_data);
+        // calculate variables and create arrays of appropriate lengths
+        // do not change these
+        int totalVertices = (NumOfStraights*4)+(NumOfCurves*(2+(2*NumOfCurveSegments)));
+        int totalTriangles = 3*((NumOfStraights*2)+(NumOfCurves*(2*NumOfCurveSegments)));
+        vertices = new Vector3[totalVertices];
+        triangles = new int[totalTriangles];
+
+
+        Debug.Log("TriLen:" + triangles.Length);
+        Debug.Log("VrtLen:" + vertices.Length);
+
+        offset_data = GenerateStraightSection(10f, track_width, offset_data);
+        offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
         offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, true, offset_data);
+        //(2, 0, 10)
+        //offset_data = GenerateCurvedSection(120f, 2f, track_width, NumOfCurveSegments, false, offset_data);
 
-        Debug.Log(vertices[0] + " " + vertices[1]);
+
         for (int i = 0; i < vertices.Length; i++)
         {
-            Debug.Log(vertices[i] + " " + i);
+            Debug.Log("vrts @ " + i + ":" + vertices[i]);
         }
-        Debug.Log(vertices.Length);
+        for (int i = 0; i < triangles.Length; i++)
+        {
+            Debug.Log("tris @ " + i + ":" + triangles[i]);
+        }
 
         CreateMesh();
     }
 
     OffsetData GenerateStraightSection(float track_length, float track_width, OffsetData offset)
     {
-        vertices[offset.vertices_index] = new Vector3(0.5f*track_width, 0, track_length) + offset.position_offset;
-        vertices[offset.vertices_index+1] = new Vector3(-0.5f*track_width, 0, track_length) + offset.position_offset;
+        vertices[offset.vertices_index+0] = new Vector3(0.5f*track_width, 0, 0) + offset.position_offset;
+        vertices[offset.vertices_index+1] = new Vector3(-0.5f*track_width, 0, 0) + offset.position_offset;
+        vertices[offset.vertices_index+2] = new Vector3(0.5f*track_width, 0, track_length) + offset.position_offset;
+        vertices[offset.vertices_index+3] = new Vector3(-0.5f*track_width, 0, track_length) + offset.position_offset;
 
-        triangles[offset.triangles_index] = offset.vertices_index - 2;
-        triangles[offset.triangles_index+1] = offset.vertices_index - 1;
-        triangles[offset.triangles_index+2] = offset.vertices_index + 0;
+        triangles[offset.triangles_index+0] = offset.vertices_index + 0;
+        triangles[offset.triangles_index+1] = offset.vertices_index + 1;
+        triangles[offset.triangles_index+2] = offset.vertices_index + 2;
 
-        triangles[offset.triangles_index+3] = offset.vertices_index + 0;
-        triangles[offset.triangles_index+4] = offset.vertices_index - 1;
-        triangles[offset.triangles_index+5] = offset.vertices_index + 1;
+        triangles[offset.triangles_index+3] = offset.vertices_index + 2;
+        triangles[offset.triangles_index+4] = offset.vertices_index + 1;
+        triangles[offset.triangles_index+5] = offset.vertices_index + 3;
 
-        OffsetData new_offset = new OffsetData(new Vector3(0, 0, track_length) + offset.position_offset, offset.rotation_offset, offset.vertices_index + 2, offset.triangles_index + 2);
+        // Vector3(0, track_length)
+        // x = 0
+        // y = track_length
+
+        // https://matthew-brett.github.io/teaching/rotation_2d.html
+        // x,y = original x and y coordinates, pre-rotation (y is actually z in this case)
+        // Vector3((Mathf.Cos(offset.rotation_offset)*x)-(Mathf.Sin(offset.rotation_offset)*y), 0, (Mathf.Sin(offset.rotation_offset)*x)+(Mathf.Cos(offset.rotation_offset)*y))
+        // should use this formula to make a "Vector3Rotate(vector, angle)" function
+        // Vector3((Mathf.Cos(offset.rotation_offset)*0)-(Mathf.Sin(offset.rotation_offset)*track_length), 0, (Mathf.Sin(offset.rotation_offset)*0)+(Mathf.Cos(offset.rotation_offset)*track_length))
+        
+        OffsetData new_offset = new OffsetData(new Vector3(0, 0, track_length) + offset.position_offset, offset.rotation_offset, offset.vertices_index + 4, offset.triangles_index + 6);
         return new_offset;
     }
 
@@ -118,8 +136,15 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             internal_offset = new Vector3(-radius, 0, 0);
         }
 
+        // offset starting angle so the initial time through the loop will be working on the initial points (at 0)
+        if (right_turn == true) {
+            angle += segment_angle;
+        } else {
+            angle -= segment_angle;
+        }
 
-        for (int i = 0; i < segments; i++)
+        // create all the points
+        for (int i = 0; i <= segments; i++)
         {
             if (right_turn == true) {
                 angle -= segment_angle;
@@ -133,15 +158,20 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             inner_z = Mathf.Sin(angle) * (radius-(track_width/2));
             outer_z = Mathf.Sin(angle) * (radius+(track_width/2));
 
-            // offset = positional offset of the entire curve
+            // offset.positional_offset = positional offset of the entire curve
             inner_point = new Vector3(inner_x, 0, inner_z) + internal_offset + offset.position_offset;
             outer_point = new Vector3(outer_x, 0, outer_z) + internal_offset + offset.position_offset;
 
-            vertices_int[(i*2)+2] = inner_point;
-            vertices_int[(i*2)+3] = outer_point;
+            vertices_int[(i*2)] = inner_point;  // +2
+            vertices_int[(i*2)+1] = outer_point;  // +3
+
+            //Debug.Log("i:" + i);
+            //Debug.Log("angle:" + angle);
+            //Debug.Log("inner_p:" + inner_point);
+            //Debug.Log("outer_p:" + outer_point);
 
             // we set these every loop but don't do anything with them until after the loop is done, because all we're trying to get is points from the last set of calculations.
-            end_position = new Vector3(Mathf.Cos(angle) * radius, 0, Mathf.Sin(angle) * radius);
+            end_position = new Vector3((Mathf.Cos(angle)*radius), 0, (Mathf.Sin(angle)*radius)) + offset.position_offset;
         }
 
         if (right_turn == true)
@@ -165,30 +195,26 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             {
                 // step through triangles array in multiples of 6, but the vertices array in multiples of 2
                 // aka, on each increment, we discard 2 points (which form a radial line) and get 2 new points (a new radial line)
-                triangles_int[(i*6)+0] = ((i+offset.vertices_index)*2)+0;
-                triangles_int[(i*6)+1] = ((i+offset.vertices_index)*2)+2;
-                triangles_int[(i*6)+2] = ((i+offset.vertices_index)*2)+1;
+                triangles_int[(i*6)+0] = (i*2)+0;
+                triangles_int[(i*6)+1] = (i*2)+2;
+                triangles_int[(i*6)+2] = (i*2)+1;
 
-                triangles_int[(i*6)+3] = ((i+offset.vertices_index)*2)+2;
-                triangles_int[(i*6)+4] = ((i+offset.vertices_index)*2)+3;
-                triangles_int[(i*6)+5] = ((i+offset.vertices_index)*2)+1;
+                triangles_int[(i*6)+3] = (i*2)+2;
+                triangles_int[(i*6)+4] = (i*2)+3;
+                triangles_int[(i*6)+5] = (i*2)+1;
             }
         }
 
         for (int i = 0; i < vertices_int.Length; i++)
         {
             vertices[i+offset.vertices_index] = vertices_int[i];
-            Debug.Log((i+offset.vertices_index) + " : " + vertices_int[i] + " : " + vertices[i+offset.vertices_index]);
-            //Debug.Log("length = " + vertices.Length + " " + vertices[i+offset.vertices_index]);
         }
-        for (int i = 0; i < triangles.Length; i++)
+        for (int i = 0; i < triangles_int.Length; i++)
         {
-            //Debug.Log("ib = " + i);
-            triangles[i+offset.triangles_index] = triangles_int[i];
-            //Debug.Log("length = " + triangles.Length + " " + triangles[i+offset.triangles_index]);
+            triangles[i+offset.triangles_index] = triangles_int[i]+offset.vertices_index;
         }
 
-        end_direction = angle*Mathf.Rad2Deg;
+        end_direction = (angle*Mathf.Rad2Deg)-offset.rotation_offset;
         new_offset = new OffsetData(end_position, end_direction, offset.vertices_index+vertices_int.Length, offset.triangles_index+triangles_int.Length);
 
         return new_offset;
