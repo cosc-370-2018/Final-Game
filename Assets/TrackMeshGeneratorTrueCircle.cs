@@ -23,7 +23,7 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         GetComponent<MeshFilter>().mesh = mesh;
 
         // define track attributes here
-        float track_width = 1f;
+        float track_width = 20f;
         int NumOfCurveSegments = 20;
         TrackUtils.OffsetData offset_data = new TrackUtils.OffsetData(Vector3.zero, 0f, 0, 0);
 
@@ -37,19 +37,18 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // construct track here
         // straight section --> TrackUtils.TrackPart("straight", length (float));
         // curve section --> TrackUtils.TrackPart("curve", degree of turn (in degrees, as a float), turn radius (float), right turn? (true or false));
-        track.Add(new TrackUtils.TrackPart("straight", 5f));
-        track.Add(new TrackUtils.TrackPart("curve", 45f, 3f, true));
-        track.Add(new TrackUtils.TrackPart("curve", 90f, 3f, false));
-        track.Add(new TrackUtils.TrackPart("straight", 5f));
-        track.Add(new TrackUtils.TrackPart("curve", 45f, 3f, true));
-        track.Add(new TrackUtils.TrackPart("curve", 32f, 3f, true));
-        track.Add(new TrackUtils.TrackPart("curve", 118f, 3f, false));
-        track.Add(new TrackUtils.TrackPart("straight", 5f));
-        track.Add(new TrackUtils.TrackPart("curve", 190f, 5f, false));
-        track.Add(new TrackUtils.TrackPart("straight", 20f));
-        track.Add(new TrackUtils.TrackPart("curve", 264f, 3f, false));
-        track.Add(new TrackUtils.TrackPart("straight", 18.5f));
-        track.Add(new TrackUtils.TrackPart("curve", 180f, 3.182f, true));
+
+		for (int i = 0; i < 8; i++) {
+			if (i % 2 == 0) {
+				if (i == 2 || i == 6) {
+					track.Add(new TrackUtils.TrackPart("straight", 50f));
+				} else {
+					track.Add(new TrackUtils.TrackPart("straight", 100f));
+				}
+			} else {
+				track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+			}
+		}
 
         ////////////////////////////////////////////////////////////////////
 
