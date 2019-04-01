@@ -247,8 +247,21 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
     {
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+		mesh.uv = GenerateUVs(mesh);
         mesh.RecalculateNormals();
     }
+
+	Vector2[] GenerateUVs(Mesh mesh) {
+		Bounds bounds = mesh.bounds;
+		Vector2[] uvs = new Vector2[vertices.Length];
+		
+		for (int i = 0; i < vertices.Length; i++) 
+		{
+			uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.z);
+		}
+
+		return uvs;
+	}
 
     private void OnDrawGizmos()
     {
