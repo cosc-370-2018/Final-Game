@@ -10,6 +10,8 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 
     Vector3[] vertices;
     int[] triangles;
+    GameObject[] cubes;
+    GameObject cubesContainer;
 
     Vector3 Rotate_Vector3(Vector3 vector, float deg_angle)
     {
@@ -25,6 +27,9 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // define track attributes here
         float track_width = 20f;
         int NumOfCurveSegments = 20;
+        float[] building_specs;
+        float building_distance = 1f;
+        float building_height = 8f;
         TrackUtils.OffsetData offset_data = new TrackUtils.OffsetData(Vector3.zero, 0f, 0, 0);
 
         // dynamic track attributes
@@ -70,22 +75,29 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         int totalTriangles = 3*((NumOfStraights*2)+(NumOfCurves*(2*NumOfCurveSegments)));
         vertices = new Vector3[totalVertices];
         triangles = new int[totalTriangles];
+        cubesContainer = new GameObject();
+        cubesContainer.transform.position = Vector3.zero;
+        cubesContainer.name = "cubesContainer";
+        cubes = new GameObject[totalVertices];
+        building_specs = new float[2];
+        building_specs[0] = building_distance;
+        building_specs[1] = building_height;
 
         // iterate through track[] and create all the segments
         for (int i = 0; i < finalTrack.Length; i++)
         {
             if (finalTrack[i].type == "curve")
             {
-                offset_data = GenerateCurvedSection(finalTrack[i].angle, finalTrack[i].radius, track_width, NumOfCurveSegments, finalTrack[i].rightturn, offset_data);
+                offset_data = GenerateCurvedSection(finalTrack[i].angle, finalTrack[i].radius, track_width, NumOfCurveSegments, finalTrack[i].rightturn, building_specs, offset_data);
             } else {
-                offset_data = GenerateStraightSection(finalTrack[i].distance, track_width, offset_data);
+                offset_data = GenerateStraightSection(finalTrack[i].distance, track_width, building_specs, offset_data);
             }
         }
 
         CreateMesh();
     }
 
-    TrackUtils.OffsetData GenerateStraightSection(float track_length, float track_width, TrackUtils.OffsetData offset)
+    TrackUtils.OffsetData GenerateStraightSection(float track_length, float track_width, float[] building_attr, TrackUtils.OffsetData offset)
     {
         vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
         vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
@@ -105,7 +117,7 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         return new_offset;
     }
 
-    TrackUtils.OffsetData GenerateCurvedSection(float curve_angle, float radius, float track_width, int segments, bool right_turn, TrackUtils.OffsetData offset)
+    TrackUtils.OffsetData GenerateCurvedSection(float curve_angle, float radius, float track_width, int segments, bool right_turn, float[] building_attr, TrackUtils.OffsetData offset)
     {
         Vector3[] vertices_int;
         int[] triangles_int;
@@ -143,6 +155,16 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             angle -= segment_angle;
         }
 
+        // generate inner and outer gameObjects
+        cubes[0] = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+        cubes[1] = GameObject.CreatePrimitive(PrimitiveType.Cube);
+        cubes[0].transform.position = new Vector3(0, building_attr[1]/2, 0) + internal_offset + offset.position_offset;
+        cubes[1].transform.position = new Vector3(Mathf.Cos(angle+segment_angle-(0.5f*curve_angle)) * (radius+(track_width/2)+building_attr[0]), building_attr[1]/2, Mathf.Sin(angle+segment_angle-(0.5f*curve_angle)) * (radius+(track_width/2)+building_attr[0])) + internal_offset + offset.position_offset;
+        cubes[0].transform.localScale = new Vector3(radius-(track_width/2)-building_attr[0], building_attr[1]/2, radius-(track_width/2)-building_attr[0]);
+        cubes[1].transform.localScale = new Vector3(radius-(track_width/2)-building_attr[0], building_attr[1]/2, radius-(track_width/2)-building_attr[0]);
+        cubes[0].transform.SetParent(cubesContainer.transform);
+        cubes[1].transform.SetParent(cubesContainer.transform);
+
         // create all the points
         for (int i = 0; i <= segments; i++)
         {
@@ -157,6 +179,7 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             outer_x = Mathf.Cos(angle) * (radius+(track_width/2));
             inner_z = Mathf.Sin(angle) * (radius-(track_width/2));
             outer_z = Mathf.Sin(angle) * (radius+(track_width/2));
+
 
             // offset.positional_offset = positional offset of the entire curve
             inner_point = new Vector3(inner_x, 0, inner_z) + internal_offset + offset.position_offset;
