@@ -13,12 +13,6 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
     GameObject[] cubes;
     GameObject cubesContainer;
 
-    Vector3 Rotate_Vector3(Vector3 vector, float deg_angle)
-    {
-        float angle = Mathf.Deg2Rad * deg_angle;
-        return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), 0, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
-    }
-
     void Start()
     {
         mesh = new Mesh();
@@ -261,5 +255,11 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         new_offset = new TrackUtils.OffsetData(end_position, end_direction, offset.vertices_index+vertices_int.Length, offset.triangles_index+triangles_int.Length);
 
         return new_offset;
+    }
+
+    Vector3 Rotate_Vector3(Vector3 vector, float deg_angle)
+    {
+        float angle = Mathf.Deg2Rad * deg_angle;
+        return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), 0, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
     }
 }
