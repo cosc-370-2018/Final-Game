@@ -97,6 +97,26 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         CreateMesh();
     }
 
+    void CreateMesh()
+    {
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+		mesh.uv = GenerateUVs(mesh);
+        mesh.RecalculateNormals();
+    }
+
+	Vector2[] GenerateUVs(Mesh mesh) {
+		Bounds bounds = mesh.bounds;
+		Vector2[] uvs = new Vector2[vertices.Length];
+		
+		for (int i = 0; i < vertices.Length; i++) 
+		{
+			uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.z);
+		}
+
+		return uvs;
+	}
+
     TrackUtils.OffsetData GenerateStraightSection(float track_length, float track_width, float[] building_attr, TrackUtils.OffsetData offset)
     {
         vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
@@ -242,24 +262,4 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 
         return new_offset;
     }
-
-    void CreateMesh()
-    {
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-		mesh.uv = GenerateUVs(mesh);
-        mesh.RecalculateNormals();
-    }
-
-	Vector2[] GenerateUVs(Mesh mesh) {
-		Bounds bounds = mesh.bounds;
-		Vector2[] uvs = new Vector2[vertices.Length];
-		
-		for (int i = 0; i < vertices.Length; i++) 
-		{
-			uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.z);
-		}
-
-		return uvs;
-	}
 }
