@@ -13,6 +13,8 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
     GameObject[] cubes;
     GameObject cubesContainer;
 
+	public int track_number = 0;
+
     void Start()
     {
         mesh = new Mesh();
@@ -37,18 +39,18 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // straight section --> TrackUtils.TrackPart("straight", length (float));
         // curve section --> TrackUtils.TrackPart("curve", degree of turn (in degrees, as a float), turn radius (float), right turn? (true or false));
 
-		for (int i = 0; i < 8; i++) {
-			if (i % 2 == 0) {
-				if (i == 2 || i == 6) {
-					track.Add(new TrackUtils.TrackPart("straight", 50f));
-				} else {
-					track.Add(new TrackUtils.TrackPart("straight", 100f));
-				}
-			} else {
-				track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
-			}
+		switch (track_number) {
+			case 1:
+				TrackOne(track, track_width);
+				break;
+			case 2:
+				TrackTwo(track, track_width);
+				break;
+			default:
+				GenericTrack(track, track_width);
+				break;
 		}
-
+	
         ////////////////////////////////////////////////////////////////////
 
         // count # of each type of track part
@@ -262,4 +264,87 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         float angle = Mathf.Deg2Rad * deg_angle;
         return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), 0, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
     }
+
+	void GenericTrack(List<TrackUtils.TrackPart> track, float track_width) {
+		for (int i = 0; i < 8; i++) {
+			if (i % 2 == 0) {
+				if (i == 2 || i == 6) {
+					track.Add(new TrackUtils.TrackPart("straight", 50f));
+				} else {
+					track.Add(new TrackUtils.TrackPart("straight", 100f));
+				}
+			} else {
+				track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+			}
+		}
+	}
+
+	void TrackOne(List<TrackUtils.TrackPart> track, float track_width) {
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 20f, track_width, false));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 95f, track_width, false));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 6.15f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+	}
+
+	void TrackTwo(List<TrackUtils.TrackPart> track, float track_width) {
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 20f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 40f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("curve", 95f, track_width, false));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 6.15f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, false));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 90f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+		track.Add(new TrackUtils.TrackPart("curve", 61f, track_width, true));
+		track.Add(new TrackUtils.TrackPart("straight", 50f));
+	}
 }
