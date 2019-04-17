@@ -3,28 +3,41 @@ using System.Collections.Generic;
 using UnityEngine;
 using TrackUtils;
 
-[RequireComponent(typeof(MeshFilter))]
 public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 {
-    Mesh mesh;
+    Transform track_object;
+    Transform left_walls_object;
+    Transform right_walls_object;
+    Mesh track_mesh;
+    Mesh left_walls_mesh;
+    Mesh right_walls_mesh;
 
-    Vector3[] vertices;
-    int[] triangles;
-    GameObject[] cubes;
-    GameObject cubesContainer;
+    Vector3[] track_vertices;
+    int[] track_triangles;
+    Vector3[] left_walls_vertices;
+    int[] left_walls_triangles;
+    Vector3[] right_walls_vertices;
+    int[] right_walls_triangles;
 
 	public int track_number = 0;
 
     void Start()
     {
-        mesh = new Mesh();
-        GetComponent<MeshFilter>().mesh = mesh;
+        track_object = this.transform.GetChild(0);
+        left_walls_object = this.transform.GetChild(1);
+        right_walls_object = this.transform.GetChild(2);
+
+        track_mesh = new Mesh();
+        left_walls_mesh = new Mesh();
+        right_walls_mesh = new Mesh();
+
+        track_object.GetComponent<MeshFilter>().mesh = track_mesh;
+        left_walls_object.GetComponent<MeshFilter>().mesh = left_walls_mesh;
+        right_walls_object.GetComponent<MeshFilter>().mesh = right_walls_mesh;
 
         // define track attributes here
         float track_width = 20f;
         int NumOfCurveSegments = 20;
-        float[] building_specs;
-        float building_distance = 1f;
         float building_height = 8f;
         TrackUtils.OffsetData offset_data = new TrackUtils.OffsetData(Vector3.zero, 0f, 0, 0);
 
@@ -69,76 +82,109 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         // do not mess with these
         int totalVertices = (NumOfStraights*4)+(NumOfCurves*(2+(2*NumOfCurveSegments)));
         int totalTriangles = 3*((NumOfStraights*2)+(NumOfCurves*(2*NumOfCurveSegments)));
-        vertices = new Vector3[totalVertices];
-        triangles = new int[totalTriangles];
-        cubesContainer = new GameObject();
-        cubesContainer.transform.position = Vector3.zero;
-        cubesContainer.name = "cubesContainer";
-        cubes = new GameObject[totalVertices];
-        building_specs = new float[2];
-        building_specs[0] = building_distance;
-        building_specs[1] = building_height;
+        track_vertices = new Vector3[totalVertices];
+        track_triangles = new int[totalTriangles];
+        left_walls_vertices = new Vector3[totalVertices];
+        left_walls_triangles = new int[totalTriangles];
+        right_walls_vertices = new Vector3[totalVertices];
+        right_walls_triangles = new int[totalTriangles];
 
         // iterate through track[] and create all the segments
         for (int i = 0; i < finalTrack.Length; i++)
         {
             if (finalTrack[i].type == "curve")
             {
-                offset_data = GenerateCurvedSection(finalTrack[i].angle, finalTrack[i].radius, track_width, NumOfCurveSegments, finalTrack[i].rightturn, building_specs, offset_data);
+                offset_data = GenerateCurvedSection(finalTrack[i].angle, finalTrack[i].radius, track_width, NumOfCurveSegments, finalTrack[i].rightturn, building_height, offset_data);
             } else {
-                offset_data = GenerateStraightSection(finalTrack[i].distance, track_width, building_specs, offset_data);
+                offset_data = GenerateStraightSection(finalTrack[i].distance, track_width, building_height, offset_data);
             }
         }
+        for (int i = 0; i < left_walls_vertices.Length; i++) {
+            //Debug.Log(left_walls_vertices[i]);
+        }
 
-        CreateMesh();
+        CreateMesh(track_mesh, track_vertices, track_triangles);
+        CreateMesh(left_walls_mesh, left_walls_vertices, left_walls_triangles);
+        CreateMesh(right_walls_mesh, right_walls_vertices, right_walls_triangles);
     }
 
-    void CreateMesh()
+    void CreateMesh(Mesh input_mesh, Vector3[] input_vertices, int[] input_triangles)
     {
-        mesh.vertices = vertices;
-        mesh.triangles = triangles;
-		mesh.uv = GenerateUVs(mesh);
-        mesh.RecalculateNormals();
+        input_mesh.vertices = input_vertices;
+        input_mesh.triangles = input_triangles;
+        input_mesh.uv = GenerateUVs(input_mesh, input_vertices);
+        input_mesh.RecalculateNormals();
     }
 
-	Vector2[] GenerateUVs(Mesh mesh) {
-		Bounds bounds = mesh.bounds;
-		Vector2[] uvs = new Vector2[vertices.Length];
-		
-		for (int i = 0; i < vertices.Length; i++) 
-		{
-			uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.z);
-		}
+    Vector2[] GenerateUVs(Mesh mesh, Vector3[] vertices) {
+        Bounds bounds = mesh.bounds;
+        Vector2[] uvs = new Vector2[vertices.Length];
 
-		return uvs;
-	}
+        for (int i = 0; i < vertices.Length; i++) 
+        {
+            uvs[i] = new Vector2(vertices[i].x / bounds.size.x, vertices[i].z / bounds.size.z);
+        }
 
-    TrackUtils.OffsetData GenerateStraightSection(float track_length, float track_width, float[] building_attr, TrackUtils.OffsetData offset)
+        return uvs;
+    }
+
+    TrackUtils.OffsetData GenerateStraightSection(float track_length, float track_width, float building_height, TrackUtils.OffsetData offset)
     {
-        vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
-        vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
-        vertices[offset.vertices_index+2] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
-        vertices[offset.vertices_index+3] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
+        track_vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        track_vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        track_vertices[offset.vertices_index+2] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
+        track_vertices[offset.vertices_index+3] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
 
-        triangles[offset.triangles_index+0] = offset.vertices_index + 0;
-        triangles[offset.triangles_index+1] = offset.vertices_index + 1;
-        triangles[offset.triangles_index+2] = offset.vertices_index + 2;
+        track_triangles[offset.triangles_index+0] = offset.vertices_index + 0;
+        track_triangles[offset.triangles_index+1] = offset.vertices_index + 1;
+        track_triangles[offset.triangles_index+2] = offset.vertices_index + 2;
+        track_triangles[offset.triangles_index+3] = offset.vertices_index + 2;
+        track_triangles[offset.triangles_index+4] = offset.vertices_index + 1;
+        track_triangles[offset.triangles_index+5] = offset.vertices_index + 3;
 
-        triangles[offset.triangles_index+3] = offset.vertices_index + 2;
-        triangles[offset.triangles_index+4] = offset.vertices_index + 1;
-        triangles[offset.triangles_index+5] = offset.vertices_index + 3;
+        left_walls_vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        left_walls_vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(-0.5f*track_width, building_height, 0), offset.rotation_offset) + offset.position_offset;
+        left_walls_vertices[offset.vertices_index+2] = Rotate_Vector3(new Vector3(-0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
+        left_walls_vertices[offset.vertices_index+3] = Rotate_Vector3(new Vector3(-0.5f*track_width, building_height, track_length), offset.rotation_offset) + offset.position_offset;
+
+        left_walls_triangles[offset.triangles_index+0] = offset.vertices_index + 0;
+        left_walls_triangles[offset.triangles_index+1] = offset.vertices_index + 1;
+        left_walls_triangles[offset.triangles_index+2] = offset.vertices_index + 2;
+        left_walls_triangles[offset.triangles_index+3] = offset.vertices_index + 2;
+        left_walls_triangles[offset.triangles_index+4] = offset.vertices_index + 1;
+        left_walls_triangles[offset.triangles_index+5] = offset.vertices_index + 3;
+
+        right_walls_vertices[offset.vertices_index+0] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, 0), offset.rotation_offset) + offset.position_offset;
+        right_walls_vertices[offset.vertices_index+1] = Rotate_Vector3(new Vector3(0.5f*track_width, building_height, 0), offset.rotation_offset) + offset.position_offset;
+        right_walls_vertices[offset.vertices_index+2] = Rotate_Vector3(new Vector3(0.5f*track_width, 0, track_length), offset.rotation_offset) + offset.position_offset;
+        right_walls_vertices[offset.vertices_index+3] = Rotate_Vector3(new Vector3(0.5f*track_width, building_height, track_length), offset.rotation_offset) + offset.position_offset;
+
+        right_walls_triangles[offset.triangles_index+0] = offset.vertices_index + 0;
+        right_walls_triangles[offset.triangles_index+1] = offset.vertices_index + 2;
+        right_walls_triangles[offset.triangles_index+2] = offset.vertices_index + 1;
+        right_walls_triangles[offset.triangles_index+3] = offset.vertices_index + 2;
+        right_walls_triangles[offset.triangles_index+4] = offset.vertices_index + 3;
+        right_walls_triangles[offset.triangles_index+5] = offset.vertices_index + 1;
 
 
         TrackUtils.OffsetData new_offset = new TrackUtils.OffsetData(Rotate_Vector3(new Vector3(0, 0, track_length), offset.rotation_offset) + offset.position_offset, offset.rotation_offset, offset.vertices_index + 4, offset.triangles_index + 6);
         return new_offset;
     }
 
-    TrackUtils.OffsetData GenerateCurvedSection(float curve_angle, float radius, float track_width, int segments, bool right_turn, float[] building_attr, TrackUtils.OffsetData offset)
+    TrackUtils.OffsetData GenerateCurvedSection(float curve_angle, float radius, float track_width, int segments, bool right_turn, float building_height, TrackUtils.OffsetData offset)
     {
         Vector3[] vertices_int;
         int[] triangles_int;
+        Vector3[] left_building_vertices_int;
+        int[] left_building_triangles_int;
+        Vector3[] right_building_vertices_int;
+        int[] right_building_triangles_int;
         vertices_int = new Vector3[2+(segments*2)];  // 2 triangles per (rectangle) segment
         triangles_int = new int[segments*6];  // 2 triangles per segment = 6 vertices per segment
+        left_building_vertices_int = new Vector3[2+(segments*2)];  // 2 triangles per (rectangle) segment
+        left_building_triangles_int = new int[segments*6];  // 2 triangles per segment = 6 vertices per segment
+        right_building_vertices_int = new Vector3[2+(segments*2)];  // 2 triangles per (rectangle) segment
+        right_building_triangles_int = new int[segments*6];  // 2 triangles per segment = 6 vertices per segment
 
         float angle;
         float segment_angle = (curve_angle*Mathf.Deg2Rad) / segments;
@@ -153,6 +199,8 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
 
         Vector3 inner_point;
         Vector3 outer_point;
+        Vector3 building_inner_point;
+        Vector3 building_outer_point;
         Vector3 internal_offset;
 
         // set rotational offset
@@ -170,16 +218,6 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
         } else {
             angle -= segment_angle;
         }
-
-        // generate inner and outer gameObjects
-        cubes[0] = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-        cubes[1] = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        cubes[0].transform.position = new Vector3(0, building_attr[1]/2, 0) + internal_offset + offset.position_offset;
-        cubes[1].transform.position = new Vector3(Mathf.Cos(angle+segment_angle-(0.5f*curve_angle)) * (radius+(track_width/2)+building_attr[0]), building_attr[1]/2, Mathf.Sin(angle+segment_angle-(0.5f*curve_angle)) * (radius+(track_width/2)+building_attr[0])) + internal_offset + offset.position_offset;
-        cubes[0].transform.localScale = new Vector3(radius-(track_width/2)-building_attr[0], building_attr[1]/2, radius-(track_width/2)-building_attr[0]);
-        cubes[1].transform.localScale = new Vector3(radius-(track_width/2)-building_attr[0], building_attr[1]/2, radius-(track_width/2)-building_attr[0]);
-        cubes[0].transform.SetParent(cubesContainer.transform);
-        cubes[1].transform.SetParent(cubesContainer.transform);
 
         // create all the points
         for (int i = 0; i <= segments; i++)
@@ -200,10 +238,24 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
             // offset.positional_offset = positional offset of the entire curve
             inner_point = new Vector3(inner_x, 0, inner_z) + internal_offset + offset.position_offset;
             outer_point = new Vector3(outer_x, 0, outer_z) + internal_offset + offset.position_offset;
+            building_outer_point = new Vector3(outer_x, building_height, outer_z) + internal_offset + offset.position_offset;
+            building_inner_point = new Vector3(inner_x, building_height, inner_z) + internal_offset + offset.position_offset;
+
+            // if it's a right turn, the right side is the inside of the curve and left on the outside
+            if (right_turn == true) {
+                left_building_vertices_int[(i*2)] = outer_point;
+                left_building_vertices_int[(i*2)+1] = building_outer_point;
+                right_building_vertices_int[(i*2)] = inner_point;
+                right_building_vertices_int[(i*2)+1] = building_inner_point;
+            } else {
+                left_building_vertices_int[(i*2)] = inner_point;
+                left_building_vertices_int[(i*2)+1] = building_inner_point;
+                right_building_vertices_int[(i*2)] = outer_point;
+                right_building_vertices_int[(i*2)+1] = building_outer_point;
+            }
 
             vertices_int[(i*2)] = inner_point;
             vertices_int[(i*2)+1] = outer_point;
-
 
             // we set these every loop but don't do anything with them until after the loop is done, because all we're trying to get is points from the last set of calculations.
             end_position = new Vector3((Mathf.Cos(angle)*radius), 0, (Mathf.Sin(angle)*radius)) + internal_offset + offset.position_offset;
@@ -223,6 +275,22 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
                 triangles_int[(i*6)+3] = (i*2)+2;
                 triangles_int[(i*6)+4] = (i*2)+1;
                 triangles_int[(i*6)+5] = (i*2)+3;
+
+                left_building_triangles_int[(i*6)+0] = (i*2)+0;
+                left_building_triangles_int[(i*6)+1] = (i*2)+1;
+                left_building_triangles_int[(i*6)+2] = (i*2)+2;
+
+                left_building_triangles_int[(i*6)+3] = (i*2)+2;
+                left_building_triangles_int[(i*6)+4] = (i*2)+1;
+                left_building_triangles_int[(i*6)+5] = (i*2)+3;
+
+                right_building_triangles_int[(i*6)+0] = (i*2)+0;
+                right_building_triangles_int[(i*6)+1] = (i*2)+2;
+                right_building_triangles_int[(i*6)+2] = (i*2)+1;
+
+                right_building_triangles_int[(i*6)+3] = (i*2)+2;
+                right_building_triangles_int[(i*6)+4] = (i*2)+3;
+                right_building_triangles_int[(i*6)+5] = (i*2)+1;
             }
         } else {
             // walk through each line and create the next rectangle segment (made of 2 triangles)
@@ -237,16 +305,37 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
                 triangles_int[(i*6)+3] = (i*2)+2;
                 triangles_int[(i*6)+4] = (i*2)+3;
                 triangles_int[(i*6)+5] = (i*2)+1;
+
+                left_building_triangles_int[(i*6)+0] = (i*2)+0;
+                left_building_triangles_int[(i*6)+1] = (i*2)+1;
+                left_building_triangles_int[(i*6)+2] = (i*2)+2;
+
+                left_building_triangles_int[(i*6)+3] = (i*2)+2;
+                left_building_triangles_int[(i*6)+4] = (i*2)+1;
+                left_building_triangles_int[(i*6)+5] = (i*2)+3;
+
+                right_building_triangles_int[(i*6)+0] = (i*2)+0;
+                right_building_triangles_int[(i*6)+1] = (i*2)+2;
+                right_building_triangles_int[(i*6)+2] = (i*2)+1;
+
+                right_building_triangles_int[(i*6)+3] = (i*2)+2;
+                right_building_triangles_int[(i*6)+4] = (i*2)+3;
+                right_building_triangles_int[(i*6)+5] = (i*2)+1;
             }
         }
 
         for (int i = 0; i < vertices_int.Length; i++)
         {
-            vertices[i+offset.vertices_index] = vertices_int[i];
+            track_vertices[i+offset.vertices_index] = vertices_int[i];
+            left_walls_vertices[i+offset.vertices_index] = left_building_vertices_int[i];
+            right_walls_vertices[i+offset.vertices_index] = right_building_vertices_int[i];
         }
         for (int i = 0; i < triangles_int.Length; i++)
         {
-            triangles[i+offset.triangles_index] = triangles_int[i]+offset.vertices_index;
+            track_triangles[i+offset.triangles_index] = triangles_int[i]+offset.vertices_index;
+            left_walls_triangles[i+offset.triangles_index] = left_building_triangles_int[i]+offset.vertices_index;
+            right_walls_triangles[i+offset.triangles_index] = right_building_triangles_int[i]+offset.vertices_index;
+            //Debug.Log(left_walls_triangles[i+offset.triangles_index] + " " + (left_walls_triangles_int[i]+offset.vertices_index));
         }
 
         if (right_turn == true) {
@@ -262,7 +351,7 @@ public class TrackMeshGeneratorTrueCircle : MonoBehaviour
     Vector3 Rotate_Vector3(Vector3 vector, float deg_angle)
     {
         float angle = Mathf.Deg2Rad * deg_angle;
-        return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), 0, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
+        return new Vector3((Mathf.Cos(angle)*vector.x)-(Mathf.Sin(angle)*vector.z), vector.y, (Mathf.Sin(angle)*vector.x)+(Mathf.Cos(angle)*vector.z));
     }
 
 	void GenericTrack(List<TrackUtils.TrackPart> track, float track_width) {
